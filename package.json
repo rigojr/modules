@@ -1,0 +1,8 @@
+{
+  "name": "modules",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "https://github.com/rigojr/modules.git",
+  "author": "José Rigoberto Salas Chacón <rigojunnior@gmail.com>",
+  "license": "MIT"
+}

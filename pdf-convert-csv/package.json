@@ -1,0 +1,10 @@
+{
+  "name": "pdf-convert-csv",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "pdfreader": "^3.0.0"
+  },
+  "type": "module"
+}
