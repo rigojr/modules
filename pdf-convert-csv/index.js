@@ -6,9 +6,9 @@ import fs from 'fs';
 import { PdfReader } from "pdfreader";
 
 const cut = process.argv[2]; // 202204
-const breakers = process.argv.slice(3); // ABR/
+const startLinePattern = /^[A-Z]{3}\/\d{2}$/;
 
-if (cut === undefined || breakers.length < 1) {
+if (cut === undefined) {
   console.log('Some arguments are not properly defined.');
 
   process.exit(1);
@@ -24,31 +24,34 @@ const missingDescriptions = [];
 let linePosition = 0;
 let canBeSave = false;
 
-function processText(text) {
-  if (typeof text !== 'string') {
-    throw new Error('text is not string')
+function processLine(line) {
+  if (typeof line !== 'string') {
+    throw new Error('line is not string')
   }
 
-  const isStartOfLine = breakers.some((brk) => text.includes(brk));
-  const isEndOfPrintedContent = text.includes('/2023');
-  const isEndOfLine = text.includes('$');
+  const isStartOfLine = startLinePattern.test(line);
+  const isEndOfLine = line.includes('$');
 
-  if (isStartOfLine && !isEndOfPrintedContent) {
+  if (isStartOfLine) {
     canBeSave = true;
   }
 
   if (canBeSave) {
-    if (content[linePosition] === undefined) {
-      content.push([text]);
-    } else {
-      content[linePosition].push(text);
-    }
+    doProcessLine(line);
   }
 
   if (canBeSave && isEndOfLine) {
     linePosition ++;
 
     canBeSave = false;
+  }
+}
+
+function doProcessLine(line) {
+  if (content[linePosition] === undefined) {
+    content.push([line]);
+  } else {
+    content[linePosition].push(line);
   }
 }
 
@@ -101,6 +104,6 @@ function transformText() {
 
 new PdfReader().parseFileItems(`assets/${pdfFileName}`, (err, item) => {
   if (err) console.error('error:', err);
-  else if (item !== undefined && item.text !== undefined) processText(item.text);
+  else if (item !== undefined && item.text !== undefined) processLine(item.text);
   else transformText();
 });
