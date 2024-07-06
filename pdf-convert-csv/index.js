@@ -3,14 +3,20 @@
  */
 
 import fs from 'fs';
-
 import { PdfReader } from "pdfreader";
 
-const breaker = ['MAR/', 'ABR/']; // TODO: should coma from outside.
-const cut = '04' //TODO: should came as preference.
-const spendingFileName = `2023${cut}-spending.csv`
-const missingDescriptionsFileName = `2023${cut}-missing-descriptions.csv`
-const pdfFileName = `2023${cut}.pdf`
+const cut = process.argv[2]; // 202204
+const breakers = process.argv.slice(3); // ABR/
+
+if (cut === undefined || breakers.length < 1) {
+  console.log('Some arguments are not properly defined.');
+
+  process.exit(1);
+}
+
+const spendingFileName = `${cut}-spending.csv`
+const missingDescriptionsFileName = `${cut}-missing-descriptions.csv`
+const pdfFileName = `${cut}.pdf`
 
 const content = [];
 const missingDescriptions = [];
@@ -23,7 +29,7 @@ function processText(text) {
     throw new Error('text is not string')
   }
 
-  const isStartOfLine = breaker.some((brk) => text.includes(brk));
+  const isStartOfLine = breakers.some((brk) => text.includes(brk));
   const isEndOfPrintedContent = text.includes('/2023');
   const isEndOfLine = text.includes('$');
 
@@ -95,6 +101,6 @@ function transformText() {
 
 new PdfReader().parseFileItems(`assets/${pdfFileName}`, (err, item) => {
   if (err) console.error('error:', err);
-  else if (!item) transformText();
-  else if (item.text) processText(item.text);
+  else if (item !== undefined && item.text !== undefined) processText(item.text);
+  else transformText();
 });
