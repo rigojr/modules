@@ -6,8 +6,8 @@ import fs from 'fs';
 
 import { PdfReader } from "pdfreader";
 
-const breaker = ['ENE/', 'FEB/']; // TODO: should coma from outside.
-const cut = '02' //TODO: should came as preference.
+const breaker = ['MAR/', 'ABR/']; // TODO: should coma from outside.
+const cut = '04' //TODO: should came as preference.
 const spendingFileName = `2023${cut}-spending.csv`
 const missingDescriptionsFileName = `2023${cut}-missing-descriptions.csv`
 const pdfFileName = `2023${cut}.pdf`
