@@ -4,23 +4,21 @@
 
 import fs from 'fs';
 import { PdfReader } from "pdfreader";
+import { promisify } from 'util';
 
-const cut = process.argv[2]; // 202204
+const path = process.argv[2];
 const startLinePattern = /^[A-Z]{3}\/\d{2}$/;
 
-if (cut === undefined) {
-  console.log('Some arguments are not properly defined.');
+if (path === undefined) {
+  console.log('Path is not properly defined.');
 
   process.exit(1);
 }
 
-const spendingFileName = `${cut}-spending.csv`
-const missingDescriptionsFileName = `${cut}-missing-descriptions.csv`
-const pdfFileName = `${cut}.pdf`
-
-const content = [];
+const transformContent = [];
 const missingDescriptions = [];
 
+let content = [];
 let linePosition = 0;
 let canBeSave = false;
 
@@ -77,10 +75,9 @@ function getCategory(categories, spendingCategories, description) {
   }
 }
 
-function transformText() {
+function transformText(cut) {
   const categories = JSON.parse(fs.readFileSync('assets/preferences.json')).categories;
   const spendingCategories =  Object.values(categories.spending).flat();
-  const transformContent = [];
 
   content.forEach((rawLine) => {
     const rawAmount = rawLine[rawLine.length - 1]
@@ -97,13 +94,48 @@ function transformText() {
 
     transformContent.push(`${cut}{${date}{${reference}{${category}{${description}{${amount}\n`);
   });
-
-  fs.writeFileSync(`assets/${spendingFileName}`, transformContent.join(''));
-  fs.writeFileSync(`assets/${missingDescriptionsFileName}`, missingDescriptions.flat().join('\n'));
 }
 
-new PdfReader().parseFileItems(`assets/${pdfFileName}`, (err, item) => {
-  if (err) console.error('error:', err);
-  else if (item !== undefined && item.text !== undefined) processLine(item.text);
-  else transformText();
-});
+function parseFile(file) {
+  return new Promise((resolve, rejects) => {
+    new PdfReader().parseFileItems(`./assets/pdf/${file}`, (err, item) => {
+      if (err) rejects(err);
+      else if (!item) {
+        const cut = file.split('.')[0];
+        const spendingFileName = `${cut}-spending.csv`;
+
+        transformText(cut, spendingFileName);
+
+        resolve();
+      }
+      else if (item.text) processLine(item.text);
+    });
+  })
+}
+
+async function main() {
+  const promisifyReaddir = promisify(fs.readdir);
+  const files = await promisifyReaddir(path);
+
+  for await(const file of files) {
+    console.log(`processing ${file}.`);
+    try {
+      linePosition = 0;
+      content = [];
+      canBeSave = false;
+
+      await parseFile(file);
+
+      console.log(`done ${file}.`);
+    } catch (error) {
+      console.error('error:', err);
+    }
+  }
+
+  fs.writeFileSync(`assets/csv/missing-descriptions.csv`, missingDescriptions.flat().join('\n'));
+  fs.writeFileSync(`assets/csv/spending-all.csv`, transformContent.join(''));
+
+}
+
+main()
+  .catch(() => {});
